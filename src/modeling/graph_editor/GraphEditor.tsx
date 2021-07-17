@@ -1,12 +1,18 @@
-import React, { FC } from 'react';
+import React, { FC, useState, useCallback } from 'react';
 import ReactFlow from 'react-flow-renderer/nocss';
 import { 
   Drawer,
-  Button
+  Button,
+  Divider,
+  Collapse
 } from 'antd';
 import {
   PlusOutlined
 } from '@ant-design/icons';
+import StepEdge from 'react-flow-renderer/nocss'
+import StraightEdge from 'react-flow-renderer/nocss'
+import SmoothStepEdge from 'react-flow-renderer/nocss'
+
 
 // you need these styles for React Flow to work properly
 import 'react-flow-renderer/dist/style.css';
@@ -16,65 +22,120 @@ import {
   Controls, 
   MiniMap, 
   Background, 
-  BackgroundVariant
+  BackgroundVariant,
+  Position,
+  Elements,
+  removeElements,
+  FlowElement,
+  Connection,
+  Node,
+  Edge,
+  addEdge,
 } from 'react-flow-renderer/nocss';
 
-import StepEdge from 'react-flow-renderer/nocss'
-
-const elements = [
-  {
-    id: '1',
-    type: 'input', // input node
-    data: { label: 'Input Node' },
-    position: { x: 250, y: 25 },
-  },
-  // default node
-  {
-    id: '2',
-    // you can also pass a React component as a label
-    data: { label: <div>Default Node</div> },
-    position: { x: 100, y: 125 },
-  },
-  {
-    id: '3',
-    type: 'output', // output node
-    data: { label: 'Output Node' },
-    position: { x: 250, y: 250 },
-  },
-  // animated edge
-  { id: 'e1-2', source: '1', target: '2', animated: true, type: 'step'},
-  { id: 'e2-3', source: '2', target: '3', animated: true, type: 'step'},
-];
-
+const { Panel } = Collapse;
 
 const edgeTypes = {
   default: StepEdge,
-  step: StepEdge
-};
+  straight: StraightEdge,
+  smoothstep: SmoothStepEdge
+}
 
-
+const initialElements: Elements = []
 export const GraphEditor: FC = () => {
 
-  const [drawerCollapsed, setDrawerCollapsed] = React.useState<boolean>(true);
+  const [elements, setElements] = useState<Elements>(initialElements);
+  const [drawerCollapsed, setDrawerCollapsed] = useState<boolean>(true);
+
+  const onElementsRemove = (elementsToRemove: Elements) =>
+    setElements((els) => removeElements(elementsToRemove, els));
+
+  const onConnect = (params: Edge | Connection) => 
+    setElements((els) => addEdge(params, els));
+  
+  const getNodeId = () => `randomnode_${+new Date()}`;
+
   const showDrawer = () => {
     setDrawerCollapsed(false);
   };
+
   const onClose = () => {
     setDrawerCollapsed(true);
   };
 
+  const onAddPipe = useCallback(() => {
+    const newNode = {
+      id: getNodeId(),
+      data: { label: 'Simple Pipe' },
+      position: {
+        x: window.innerWidth / 2.7,
+        y: window.innerHeight / 2.7,
+      },
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left,
+
+    };
+    setElements((els) => els.concat(newNode));
+  }, [setElements]);
+
+  const onAddSource = useCallback(() => {
+    const newNode = {
+      id: getNodeId(),
+      data: { label: 'Source' },
+      type: 'input',
+      position: {
+        x: window.innerWidth / 2.7,
+        y: window.innerHeight / 2.7,
+      },
+      sourcePosition: Position.Right,
+    };
+    setElements((els) => els.concat(newNode));
+  }, [setElements]);
+
+  const onAddSink = useCallback(() => {
+    const newNode = {
+      id: getNodeId(),
+      data: { label: 'Sink' },
+      type: 'output',
+      position: {
+        x: window.innerWidth / 2.7,
+        y: window.innerHeight / 2.7,
+      },
+      targetPosition: Position.Left,
+    };
+    setElements((els) => els.concat(newNode));
+  }, [setElements]);
+
   return (
-    <ReactFlow snapToGrid={true} elements={elements}>
+    <ReactFlow 
+      snapToGrid={false} 
+      elements={elements}
+      onElementsRemove={onElementsRemove}
+      onConnect={onConnect}
+    >
       <Drawer
-        title="Basic Drawer"
+        title="Elements"
         placement="right"
-        closable={false}
+        closable={true}
         onClose={onClose}
         visible={!drawerCollapsed}
+        getContainer={false}
+        style={{ position: 'absolute' }}
+        mask={false}
+        width={500}
       >
-        <p>Some contents...</p>
-        <p>Some contents...</p>
-        <p>Some contents...</p>
+        <Collapse defaultActiveKey={['1']} style={{ margin: '0px'}}>
+          <Panel header="Pipes" key="1">
+            <Button onClick={onAddPipe}>Simple Pipe</Button>
+          </Panel>
+          <Panel header="Sources" key="2">
+            <Button onClick={onAddSource}>Ideal Pressure Source</Button>
+          </Panel>
+          <Panel header="Sinks" key="3">
+            <Button onClick={onAddSink}>Ideal Pressure Sink</Button>
+          </Panel>
+        </Collapse>
+        
       </Drawer>
       <Button className="add_button" onClick={showDrawer} type="primary" icon={<PlusOutlined />}/>
       <MiniMap
