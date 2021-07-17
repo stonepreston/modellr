@@ -1,5 +1,9 @@
 @import '~antd/lib/style/themes/dark.less';
 
+.add_button {
+  z-index: 4;
+  margin: 10px
+}
 .react-flow__selection {
   background: rgba(0, 89, 220, 0.08);
   border: 1px dotted rgba(0, 89, 220, 0.8);
@@ -94,7 +98,7 @@
 }
 
 .react-flow__minimap {
-  background-color: #fff;
+  background-color: @component-background;
 }
 
 .react-flow__controls {
@@ -123,3 +127,4 @@
     }
   }
 }
+

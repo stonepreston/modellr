@@ -6,28 +6,23 @@ import {
   Link
 } from "react-router-dom";
 import './App.less';
-import { Layout, Menu, Tree } from 'antd';
+import { 
+  Layout, 
+  Menu, 
+  Tree, 
+  Dropdown,
+} from 'antd';
 import {
   SettingOutlined,
-  BranchesOutlined
+  BranchesOutlined,
+  MenuUnfoldOutlined,
+  MenuFoldOutlined,
 } from '@ant-design/icons';
 import { GraphEditor } from './modeling/graph_editor/GraphEditor'
 const { Header, Content, Sider } = Layout;
 const { SubMenu } = Menu;
 
 const { DirectoryTree } = Tree;
-
-type LogoProps = {
-  isCollapsed: boolean
-}
-
-export const Logo = ({ isCollapsed }: LogoProps) => {
-  if (isCollapsed) {
-    return <BranchesOutlined className="logo_text"/>
-  } else {
-    return <h1 className="logo_text">Modellr</h1>
-  }
-}
 
 const treeData = [
   {
@@ -50,16 +45,31 @@ const treeData = [
 
 const App: FC = () => {
 
-  const [collapsed, setCollapsed] = React.useState<boolean>(false);
-
-  function onCollapse() {
-    setCollapsed(!collapsed)
+  const [siderCollapsed, setSiderCollapsed] = React.useState<boolean>(false);
+  
+  function toggleSider() {
+    setSiderCollapsed(!siderCollapsed)
   };
+
+  function handleButtonClick() {
+
+  }
+
+  const menu = (
+    <Menu>
+      <Menu.Item key="simulation" >
+        <Link to="/simulation">Simulation</Link>
+      </Menu.Item>
+      <Menu.Item key="parameter_estimation" >
+        <Link to="/parameter_estimation">Parameter Estimation</Link>
+      </Menu.Item>
+    </Menu>
+  );
 
   return (
     <Router>
       <Layout style={{ minHeight: '100vh' }}>
-          <Sider collapsible width={300} collapsedWidth={0} collapsed={collapsed} onCollapse={onCollapse}>
+          <Sider collapsible width={300} collapsedWidth={0} collapsed={siderCollapsed} trigger={null}>
             <div className="logo">
               <div className="logo_text">Modellr</div>
             </div>
@@ -77,21 +87,21 @@ const App: FC = () => {
             </Menu>
           </Sider>
           <Layout>
-            <Header style={{ padding: 0 }}>
-              <h1 className="page_header_style">Simple Pipes</h1>
-              <Menu mode="horizontal">
-                <Menu.Item key="model" >
-                  <Link to="/graph_editor">Editor</Link>
-                </Menu.Item>
-                <Menu.Item key="simulation">
-                  <Link to="/simulation">Simulation</Link>
-                </Menu.Item>
-                <Menu.Item key="parameter_estimation">
-                  <Link to="/parameter_estimation">Parameter Estimation</Link>
-                </Menu.Item>
-              </Menu>
+            <Header className="nav_header">
+          
+              
+              {React.createElement(siderCollapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
+                className: 'trigger',
+                onClick: toggleSider
+              })}
+              <Dropdown.Button onClick={handleButtonClick} overlay={menu} placement="bottomRight">
+                <Link to="/graph_editor">Simple Pipe Model</Link>
+              </Dropdown.Button>
+             
+              
+     
             </Header>
-            <Content style={{ margin: '0 16px' }}>
+            <Content >
             <Switch>
               <Route path="/graph_editor">
                 <div className="flow" >

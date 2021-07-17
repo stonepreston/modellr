@@ -7,13 +7,30 @@ html{
   padding: 0;
 }
 
-.page_header_style {
-  float: left;
+.nav_header {
   background: @black;
-  padding-left: 20px;
-  padding-right: 20px;
+  padding: 0;
   border-bottom: @border-width-base @border-style-base @border-color-split;
-  height: 64px;
+  line-height: 64px
+}
+
+.trigger {
+  padding: 0px 24px;
+  font-size: 18px;
+  line-height: 63px;
+  cursor: pointer;
+  float: left;
+  transition: color .5s;
+  background: @black;
+  // border-bottom: @border-width-base @border-style-base @border-color-split;
+
+  &:hover {
+    color: @primary-color;
+  }
+}
+
+.ant-menu {
+  background: @black;
 }
 
 .App {

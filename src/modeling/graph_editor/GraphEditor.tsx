@@ -1,6 +1,12 @@
-import { FC } from 'react';
-import { PageHeader} from 'antd';
+import React, { FC } from 'react';
 import ReactFlow from 'react-flow-renderer/nocss';
+import { 
+  Drawer,
+  Button
+} from 'antd';
+import {
+  PlusOutlined
+} from '@ant-design/icons';
 
 // you need these styles for React Flow to work properly
 import 'react-flow-renderer/dist/style.css';
@@ -49,22 +55,34 @@ const edgeTypes = {
 
 export const GraphEditor: FC = () => {
 
+  const [drawerCollapsed, setDrawerCollapsed] = React.useState<boolean>(true);
+  const showDrawer = () => {
+    setDrawerCollapsed(false);
+  };
+  const onClose = () => {
+    setDrawerCollapsed(true);
+  };
+
   return (
     <ReactFlow snapToGrid={true} elements={elements}>
+      <Drawer
+        title="Basic Drawer"
+        placement="right"
+        closable={false}
+        onClose={onClose}
+        visible={!drawerCollapsed}
+      >
+        <p>Some contents...</p>
+        <p>Some contents...</p>
+        <p>Some contents...</p>
+      </Drawer>
+      <Button className="add_button" onClick={showDrawer} type="primary" icon={<PlusOutlined />}/>
       <MiniMap
           nodeColor={(node) => {
-          switch (node.type) {
-              case 'input':
-              return 'red';
-              case 'default':
-              return '#00ff00';
-              case 'output':
-              return 'rgb(0,0,255)';
-              default:
-              return '#eee';
-          }
+            return "white"
           }}
           nodeStrokeWidth={3}
+          maskColor={"#1f1f1f"}
       />
       <Controls />
       <Background
