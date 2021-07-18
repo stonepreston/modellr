@@ -1,13 +1,13 @@
-import React, { FC, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import ReactFlow from 'react-flow-renderer/nocss';
 import { 
   Drawer,
   Button,
-  Divider,
   Collapse
 } from 'antd';
 import {
-  PlusOutlined
+  PlusOutlined,
+  CalendarOutlined
 } from '@ant-design/icons';
 import StepEdge from 'react-flow-renderer/nocss'
 import StraightEdge from 'react-flow-renderer/nocss'
@@ -26,9 +26,7 @@ import {
   Position,
   Elements,
   removeElements,
-  FlowElement,
   Connection,
-  Node,
   Edge,
   addEdge,
 } from 'react-flow-renderer/nocss';
@@ -42,10 +40,12 @@ const edgeTypes = {
 }
 
 const initialElements: Elements = []
-export const GraphEditor: FC = () => {
+export const GraphEditor = () => {
 
   const [elements, setElements] = useState<Elements>(initialElements);
-  const [drawerCollapsed, setDrawerCollapsed] = useState<boolean>(true);
+  const [elementsDrawerClosed, setElementsDrawerClosed] = useState<boolean>(true);
+  const [historyDrawerClosed, setHistoryDrawerClosed] = useState<boolean>(true);
+
 
   const onElementsRemove = (elementsToRemove: Elements) =>
     setElements((els) => removeElements(elementsToRemove, els));
@@ -55,12 +55,20 @@ export const GraphEditor: FC = () => {
   
   const getNodeId = () => `randomnode_${+new Date()}`;
 
-  const showDrawer = () => {
-    setDrawerCollapsed(false);
+  const showElementsDrawer = () => {
+    setElementsDrawerClosed(false);
   };
 
-  const onClose = () => {
-    setDrawerCollapsed(true);
+  const onCloseElementsDrawer = () => {
+    setElementsDrawerClosed(true)
+  };
+
+  const showHistoryDrawer = () => {
+    setHistoryDrawerClosed(false);
+  };
+
+  const onCloseHistoryDrawer = () => {
+    setHistoryDrawerClosed(true)
   };
 
   const onAddPipe = useCallback(() => {
@@ -117,12 +125,12 @@ export const GraphEditor: FC = () => {
         title="Elements"
         placement="right"
         closable={true}
-        onClose={onClose}
-        visible={!drawerCollapsed}
+        onClose={onCloseElementsDrawer}
+        visible={!elementsDrawerClosed}
         getContainer={false}
-        style={{ position: 'absolute' }}
         mask={false}
         width={500}
+        headerStyle={{marginTop: "9px"}}
       >
         <Collapse defaultActiveKey={['1']} style={{ margin: '0px'}}>
           <Panel header="Pipes" key="1">
@@ -135,9 +143,21 @@ export const GraphEditor: FC = () => {
             <Button onClick={onAddSink}>Ideal Pressure Sink</Button>
           </Panel>
         </Collapse>
-        
       </Drawer>
-      <Button className="add_button" onClick={showDrawer} type="primary" icon={<PlusOutlined />}/>
+      <Drawer
+        title="Model History"
+        placement="right"
+        closable={true}
+        onClose={onCloseHistoryDrawer}
+        visible={!historyDrawerClosed}
+        getContainer={false}
+        mask={false}
+        width={500}
+        headerStyle={{marginTop: "9px"}}
+      >
+      </Drawer>
+      <Button className="add_button" onClick={showElementsDrawer} type="primary" icon={<PlusOutlined />}/>
+      <Button className="history_button" onClick={showHistoryDrawer} type="primary" icon={< CalendarOutlined />}/>
       <MiniMap
           nodeColor={(node) => {
             return "white"

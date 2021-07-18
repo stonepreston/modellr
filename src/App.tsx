@@ -10,15 +10,16 @@ import {
   Layout, 
   Menu, 
   Tree, 
-  Dropdown,
 } from 'antd';
 import {
   SettingOutlined,
   BranchesOutlined,
   MenuUnfoldOutlined,
-  MenuFoldOutlined,
+  MenuFoldOutlined
 } from '@ant-design/icons';
 import { GraphEditor } from './modeling/graph_editor/GraphEditor'
+import { SimulationSettings } from './modeling/simulation/SimulationSettings'
+import { ParameterEstimationSettings } from './modeling/parameter_estimation/ParameterEstimationSettings'
 const { Header, Content, Sider } = Layout;
 const { SubMenu } = Menu;
 
@@ -46,25 +47,10 @@ const treeData = [
 const App: FC = () => {
 
   const [siderCollapsed, setSiderCollapsed] = React.useState<boolean>(false);
-  
+
   function toggleSider() {
     setSiderCollapsed(!siderCollapsed)
   };
-
-  function handleButtonClick() {
-
-  }
-
-  const menu = (
-    <Menu>
-      <Menu.Item key="simulation" >
-        <Link to="/simulation">Simulation</Link>
-      </Menu.Item>
-      <Menu.Item key="parameter_estimation" >
-        <Link to="/parameter_estimation">Parameter Estimation</Link>
-      </Menu.Item>
-    </Menu>
-  );
 
   return (
     <Router>
@@ -88,34 +74,38 @@ const App: FC = () => {
           </Sider>
           <Layout>
             <Header className="nav_header">
-          
-              
               {React.createElement(siderCollapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
                 className: 'trigger',
                 onClick: toggleSider
               })}
-              <Dropdown.Button onClick={handleButtonClick} overlay={menu} placement="bottomRight">
-                <Link to="/graph_editor">Simple Pipe Model</Link>
-              </Dropdown.Button>
-             
-              
-     
+
+              <Menu mode="horizontal" style={{float: "left"}}>
+                <Menu.Item key="model">
+                  <Link to="/graph_editor">Model</Link>
+                </Menu.Item>
+                <Menu.Item key="simulation">
+                  <Link to="/simulation">Simulation</Link>
+                </Menu.Item>
+                <Menu.Item key="parameter_estimation">
+                  <Link to="/parameter_estimation">Parameter Estimation</Link>
+                </Menu.Item>
+              </Menu>
+              <h1 style={{float: "right", marginRight: "24px"}}>Simple Pipe Model</h1>
             </Header>
             <Content >
-            <Switch>
-              <Route path="/graph_editor">
-                <div className="flow" >
-                  <GraphEditor />
-                </div>
-              </Route>
-              <Route path="/simulation">
-                simulation
-              </Route>
-              <Route path="/parameter_estimation">
-                parameter estimation
-              </Route>
-            </Switch>
-              
+              <Switch>
+                <Route path="/graph_editor">
+                  <div className="flow" >
+                    <GraphEditor/>
+                  </div>
+                </Route>
+                <Route path="/simulation">
+                  <SimulationSettings />
+                </Route>
+                <Route path="/parameter_estimation">
+                  <ParameterEstimationSettings />
+                </Route>
+              </Switch>
             </Content>
           </Layout>
         </Layout>
