@@ -10277,10 +10277,10 @@
   "resolved" "https://registry.npmjs.org/react-error-overlay/-/react-error-overlay-6.0.9.tgz"
   "version" "6.0.9"
 
-"react-flow-renderer@^9.6.4":
-  "integrity" "sha512-G+H9A1DZSKoGHe3rzX4RyU+9X5OYG16m3rh7tv56d7uS/kA7RY0gc08w8mCPUY4t8VqHdFu/+1cEaGN6wGjLew=="
-  "resolved" "https://registry.npmjs.org/react-flow-renderer/-/react-flow-renderer-9.6.4.tgz"
-  "version" "9.6.4"
+"react-flow-renderer@^9.6.5":
+  "integrity" "sha512-H5y5wjFcrJJjEjfRZXhOPB3lRfdIFL5l6h2rQ9h7qEecksG6VuMN54HYT+7hvzo8O/2QOSZZdFcObC2p//W2Ng=="
+  "resolved" "https://registry.npmjs.org/react-flow-renderer/-/react-flow-renderer-9.6.5.tgz"
+  "version" "9.6.5"
   dependencies:
     "@babel/runtime" "^7.14.6"
     "@types/d3" "^7.0.0"

@@ -9,10 +9,6 @@ import {
   PlusOutlined,
   CalendarOutlined
 } from '@ant-design/icons';
-import StepEdge from 'react-flow-renderer/nocss'
-import StraightEdge from 'react-flow-renderer/nocss'
-import SmoothStepEdge from 'react-flow-renderer/nocss'
-
 
 // you need these styles for React Flow to work properly
 import 'react-flow-renderer/dist/style.css';
@@ -29,11 +25,16 @@ import {
   Connection,
   Edge,
   addEdge,
+  EdgeTypesType,
+  StepEdge,
+  StraightEdge,
+  SmoothStepEdge,
+  ConnectionLineType
 } from 'react-flow-renderer/nocss';
 
 const { Panel } = Collapse;
 
-const edgeTypes = {
+const edgeTypes: EdgeTypesType = {
   default: StepEdge,
   straight: StraightEdge,
   smoothstep: SmoothStepEdge
@@ -120,6 +121,8 @@ export const GraphEditor = () => {
       elements={elements}
       onElementsRemove={onElementsRemove}
       onConnect={onConnect}
+      edgeTypes={edgeTypes}
+      connectionLineType={ConnectionLineType.Step}
     >
       <Drawer
         title="Elements"
