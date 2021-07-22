@@ -1,5 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ReactFlow from 'react-flow-renderer/nocss';
+import CSApi from "../API/CSApi"
 import { 
   Drawer,
   Button,
@@ -34,6 +35,11 @@ import {
 
 const { Panel } = Collapse;
 
+interface ModelCategory {
+  category_key: string;
+  model_keys: string[];
+}
+
 const edgeTypes: EdgeTypesType = {
   default: StepEdge,
   straight: StraightEdge,
@@ -46,6 +52,17 @@ export const GraphEditor = () => {
   const [elements, setElements] = useState<Elements>(initialElements);
   const [elementsDrawerClosed, setElementsDrawerClosed] = useState<boolean>(true);
   const [historyDrawerClosed, setHistoryDrawerClosed] = useState<boolean>(true);
+  const [modelCategories, setModelCategories] = useState<Array<ModelCategory> | undefined>([])
+
+  useEffect(() => {    
+    CSApi.get('/model_categories' )
+      .then(response => {
+        setModelCategories(response.data);
+      })
+      .catch(error => {
+        console.log(`Error fetching categorized models: ${error}`)
+      });
+  }, []);
 
 
   const onElementsRemove = (elementsToRemove: Elements) =>
@@ -87,10 +104,12 @@ export const GraphEditor = () => {
     setElements((els) => els.concat(newNode));
   }, [setElements]);
 
-  const onAddSource = useCallback(() => {
+  const onAddElement = useCallback((modelKey) => {
+    console.log(`adding node with key: ${modelKey}`);
+    
     const newNode = {
       id: getNodeId(),
-      data: { label: 'Source' },
+      data: { label: modelKey, asdf: "asdf" },
       type: 'input',
       position: {
         x: window.innerWidth / 2.7,
@@ -136,15 +155,13 @@ export const GraphEditor = () => {
         headerStyle={{marginTop: "9px"}}
       >
         <Collapse defaultActiveKey={['1']} style={{ margin: '0px'}}>
-          <Panel header="Pipes" key="1">
-            <Button onClick={onAddPipe}>Simple Pipe</Button>
-          </Panel>
-          <Panel header="Sources" key="2">
-            <Button onClick={onAddSource}>Ideal Pressure Source</Button>
-          </Panel>
-          <Panel header="Sinks" key="3">
-            <Button onClick={onAddSink}>Ideal Pressure Sink</Button>
-          </Panel>
+          {modelCategories!.map(category => (
+            <Panel header={category.category_key} key={category.category_key}>
+              {category.model_keys.map(modelKey => (
+                <Button key={modelKey} onClick={() => onAddElement(modelKey)}>{modelKey}</Button>
+              ))}
+            </Panel>
+          ))}
         </Collapse>
       </Drawer>
       <Drawer
