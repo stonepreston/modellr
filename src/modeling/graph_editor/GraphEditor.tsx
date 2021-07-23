@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import ReactFlow from 'react-flow-renderer/nocss';
+import { ModelCategory, Model } from "../../types/index";
 import CSApi from "../API/CSApi"
 import { 
   Drawer,
   Button,
-  Collapse
+  Collapse,
+  Modal,
+  Form, 
+  Input, 
 } from 'antd';
 import {
   PlusOutlined,
@@ -30,15 +34,12 @@ import {
   StepEdge,
   StraightEdge,
   SmoothStepEdge,
-  ConnectionLineType
+  ConnectionLineType,
+  ConnectionMode,
+  Node
 } from 'react-flow-renderer/nocss';
 
 const { Panel } = Collapse;
-
-interface ModelCategory {
-  category_key: string;
-  model_keys: string[];
-}
 
 const edgeTypes: EdgeTypesType = {
   default: StepEdge,
@@ -48,14 +49,17 @@ const edgeTypes: EdgeTypesType = {
 
 const initialElements: Elements = []
 export const GraphEditor = () => {
+  const [form] = Form.useForm();
 
   const [elements, setElements] = useState<Elements>(initialElements);
+  const [nodeModalVisible, setNodeModalVisible] = useState<boolean>(false);
   const [elementsDrawerClosed, setElementsDrawerClosed] = useState<boolean>(true);
   const [historyDrawerClosed, setHistoryDrawerClosed] = useState<boolean>(true);
   const [modelCategories, setModelCategories] = useState<Array<ModelCategory> | undefined>([])
+  const [selectedModel, setSelectedModel] = useState<Model | undefined>();
 
   useEffect(() => {    
-    CSApi.get('/model_categories' )
+    CSApi.get('/categorized_models' )
       .then(response => {
         setModelCategories(response.data);
       })
@@ -89,50 +93,36 @@ export const GraphEditor = () => {
     setHistoryDrawerClosed(true)
   };
 
-  const onAddPipe = useCallback(() => {
-    const newNode = {
+  const onNodeDoubleClick = useCallback((event, node: Node) => {
+    setSelectedModel(node.data.model);
+    setNodeModalVisible(true);
+  }, [setSelectedModel]);
+
+  const addNode = useCallback((model: Model) => {
+
+    var nodeType = "default"
+    if (model.system.connections.length === 1) {
+      nodeType = "input"
+    }
+
+    const newNode: Node = {
       id: getNodeId(),
-      data: { label: 'Simple Pipe' },
+      type: nodeType,
+      data: { label: model.name, model: model},
       position: {
         x: window.innerWidth / 2.7,
         y: window.innerHeight / 2.7,
       },
       sourcePosition: Position.Right,
       targetPosition: Position.Left,
-
     };
     setElements((els) => els.concat(newNode));
+
   }, [setElements]);
 
-  const onAddElement = useCallback((modelKey) => {
-    console.log(`adding node with key: ${modelKey}`);
-    
-    const newNode = {
-      id: getNodeId(),
-      data: { label: modelKey, asdf: "asdf" },
-      type: 'input',
-      position: {
-        x: window.innerWidth / 2.7,
-        y: window.innerHeight / 2.7,
-      },
-      sourcePosition: Position.Right,
-    };
-    setElements((els) => els.concat(newNode));
-  }, [setElements]);
-
-  const onAddSink = useCallback(() => {
-    const newNode = {
-      id: getNodeId(),
-      data: { label: 'Sink' },
-      type: 'output',
-      position: {
-        x: window.innerWidth / 2.7,
-        y: window.innerHeight / 2.7,
-      },
-      targetPosition: Position.Left,
-    };
-    setElements((els) => els.concat(newNode));
-  }, [setElements]);
+  const onAddElement = (model: Model) => {
+    addNode(model)
+  };
 
   return (
     <ReactFlow 
@@ -142,6 +132,8 @@ export const GraphEditor = () => {
       onConnect={onConnect}
       edgeTypes={edgeTypes}
       connectionLineType={ConnectionLineType.Step}
+      connectionMode={ConnectionMode.Loose}
+      onNodeDoubleClick={(event, node) => {onNodeDoubleClick(event, node);}}
     >
       <Drawer
         title="Elements"
@@ -156,9 +148,9 @@ export const GraphEditor = () => {
       >
         <Collapse defaultActiveKey={['1']} style={{ margin: '0px'}}>
           {modelCategories!.map(category => (
-            <Panel header={category.category_key} key={category.category_key}>
-              {category.model_keys.map(modelKey => (
-                <Button key={modelKey} onClick={() => onAddElement(modelKey)}>{modelKey}</Button>
+            <Panel header={category.category} key={category.category}>
+              {category.models.map(model => (
+                <Button key={model.id} onClick={() => onAddElement(model)}>{model.name}</Button>
               ))}
             </Panel>
           ))}
@@ -189,6 +181,27 @@ export const GraphEditor = () => {
       <Background
           variant={BackgroundVariant.Dots}
       />
+      <Modal
+          title={selectedModel?.name}
+          centered
+          closable
+          visible={nodeModalVisible}
+          footer={null}
+          onCancel={() => setNodeModalVisible(false)}
+        >
+           <Form
+            form={form}
+            layout="horizontal"
+            style={{margin: "24px"}}
+            // wrapperCol={{ span: 4 }}
+          >
+            {selectedModel?.system.parameters.map(parameter => (
+              <Form.Item key={parameter.name} required label={parameter.name}>
+              <Input value={parameter.value} />
+            </Form.Item>
+            ))}
+          </Form>
+      </Modal>
     </ReactFlow>
   );
 }

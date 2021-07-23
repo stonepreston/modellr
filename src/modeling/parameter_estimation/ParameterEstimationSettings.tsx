@@ -9,7 +9,6 @@ import {
   Drawer
 } from 'antd';
 import {
-  LineChartOutlined,
   CalendarOutlined
 } from '@ant-design/icons';
 
