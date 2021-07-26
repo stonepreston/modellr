@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAppSelector, useAppDispatch } from '../../hooks'
+import { setElements } from './graphEditorSlice'
 import ReactFlow from 'react-flow-renderer/nocss';
-import { ModelCategory, Model } from "../../types/index";
+import { ModelCategory, Model, Parameter } from "../../types/index";
 import CSApi from "../API/CSApi"
+
+import { cloneDeep } from 'lodash';
+
 import { 
   Drawer,
   Button,
@@ -36,7 +41,8 @@ import {
   SmoothStepEdge,
   ConnectionLineType,
   ConnectionMode,
-  Node
+  Node,
+  FlowElement,
 } from 'react-flow-renderer/nocss';
 
 const { Panel } = Collapse;
@@ -47,16 +53,17 @@ const edgeTypes: EdgeTypesType = {
   smoothstep: SmoothStepEdge
 }
 
-const initialElements: Elements = []
 export const GraphEditor = () => {
-  const [form] = Form.useForm();
 
-  const [elements, setElements] = useState<Elements>(initialElements);
+  const dispatch = useAppDispatch();
+  const elements = useAppSelector(state => state.graphEditor.elements)
   const [nodeModalVisible, setNodeModalVisible] = useState<boolean>(false);
   const [elementsDrawerClosed, setElementsDrawerClosed] = useState<boolean>(true);
   const [historyDrawerClosed, setHistoryDrawerClosed] = useState<boolean>(true);
   const [modelCategories, setModelCategories] = useState<Array<ModelCategory> | undefined>([])
-  const [selectedModel, setSelectedModel] = useState<Model | undefined>();
+  const [selectedNode, setSelectedNode] = useState<Node | undefined>();
+
+  const [form] = Form.useForm();
 
   useEffect(() => {    
     CSApi.get('/categorized_models' )
@@ -69,13 +76,16 @@ export const GraphEditor = () => {
   }, []);
 
 
-  const onElementsRemove = (elementsToRemove: Elements) =>
-    setElements((els) => removeElements(elementsToRemove, els));
+  const onElementsRemove = (elementsToRemove: Elements) => {
+    dispatch(setElements((removeElements(elementsToRemove, elements))));
+  }
+    
 
-  const onConnect = (params: Edge | Connection) => 
-    setElements((els) => addEdge(params, els));
+  const onConnect = (params: Edge | Connection) => {
+    dispatch(setElements(addEdge(params, elements)));
+  }
   
-  const getNodeId = () => `randomnode_${+new Date()}`;
+  const getNodeId = () => `node_${+new Date()}`;
 
   const showElementsDrawer = () => {
     setElementsDrawerClosed(false);
@@ -94,21 +104,24 @@ export const GraphEditor = () => {
   };
 
   const onNodeDoubleClick = useCallback((event, node: Node) => {
-    setSelectedModel(node.data.model);
+    setSelectedNode(node);
     setNodeModalVisible(true);
-  }, [setSelectedModel]);
+    console.log(node);
+  }, [setSelectedNode]);
 
-  const addNode = useCallback((model: Model) => {
+  const addNode = (model: Model) => {
 
     var nodeType = "default"
     if (model.system.connections.length === 1) {
       nodeType = "input"
     }
 
+    let m = cloneDeep(model);
+
     const newNode: Node = {
       id: getNodeId(),
       type: nodeType,
-      data: { label: model.name, model: model},
+      data: { label: m.name, model: m},
       position: {
         x: window.innerWidth / 2.7,
         y: window.innerHeight / 2.7,
@@ -116,13 +129,29 @@ export const GraphEditor = () => {
       sourcePosition: Position.Right,
       targetPosition: Position.Left,
     };
-    setElements((els) => els.concat(newNode));
 
-  }, [setElements]);
+    dispatch(setElements(elements.concat(newNode)));
+    
+  };
 
   const onAddElement = (model: Model) => {
-    addNode(model)
+    addNode(model);
+    console.log("new elements", elements);
   };
+
+  const onParameterFormValuesChanged = (changedValues: any, allValues: any) => {
+    let parameters: Parameter[] = []
+    for (const [key, value] of Object.entries(allValues)) {
+      parameters.push({name: key, value: Number(value)})
+    }
+    console.log(selectedNode!.data)
+    selectedNode!.data = {...selectedNode!.data, model: {
+        ...selectedNode!.data.model, system: {
+          ...selectedNode!.data.model.system, parameters: parameters
+        }
+      } 
+    };
+  }
 
   return (
     <ReactFlow 
@@ -182,25 +211,29 @@ export const GraphEditor = () => {
           variant={BackgroundVariant.Dots}
       />
       <Modal
-          title={selectedModel?.name}
+          title={selectedNode?.data.model.name}
           centered
           closable
           visible={nodeModalVisible}
           footer={null}
           onCancel={() => setNodeModalVisible(false)}
         >
-           <Form
+          <div>
+          <Form
             form={form}
+            name={selectedNode?.data.label}
             layout="horizontal"
             style={{margin: "24px"}}
+            onValuesChange={onParameterFormValuesChanged} 
             // wrapperCol={{ span: 4 }}
           >
-            {selectedModel?.system.parameters.map(parameter => (
-              <Form.Item key={parameter.name} required label={parameter.name}>
-              <Input value={parameter.value} />
-            </Form.Item>
+            {selectedNode?.data.model.system.parameters.map((parameter: Parameter) => (
+              <Form.Item initialValue={parameter.value} name={parameter.name} key={parameter.name} required label={parameter.name}>
+                <Input />
+              </Form.Item>
             ))}
           </Form>
+          </div>
       </Modal>
     </ReactFlow>
   );
