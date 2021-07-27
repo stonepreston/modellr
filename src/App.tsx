@@ -17,6 +17,7 @@ import {
   MenuUnfoldOutlined,
   MenuFoldOutlined
 } from '@ant-design/icons';
+
 import { GraphEditor } from './modeling/graph_editor/GraphEditor'
 import { SimulationSettings } from './modeling/simulation/SimulationSettings'
 import { ParameterEstimationSettings } from './modeling/parameter_estimation/ParameterEstimationSettings'

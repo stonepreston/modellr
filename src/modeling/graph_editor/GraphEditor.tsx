@@ -1,19 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAppSelector, useAppDispatch } from '../../hooks'
-import { setElements } from './graphEditorSlice'
 import ReactFlow from 'react-flow-renderer/nocss';
-import { ModelCategory, Model, Parameter } from "../../types/index";
+import { ModelCategory, Model } from "../../types/index";
 import CSApi from "../API/CSApi"
-
-import { cloneDeep } from 'lodash';
+import { ParameterForm } from './ParameterForm'
 
 import { 
   Drawer,
   Button,
   Collapse,
   Modal,
-  Form, 
-  Input, 
 } from 'antd';
 import {
   PlusOutlined,
@@ -42,7 +37,6 @@ import {
   ConnectionLineType,
   ConnectionMode,
   Node,
-  FlowElement,
 } from 'react-flow-renderer/nocss';
 
 const { Panel } = Collapse;
@@ -51,19 +45,17 @@ const edgeTypes: EdgeTypesType = {
   default: StepEdge,
   straight: StraightEdge,
   smoothstep: SmoothStepEdge
-}
+};
 
+const initialElements: Elements = [];
 export const GraphEditor = () => {
 
-  const dispatch = useAppDispatch();
-  const elements = useAppSelector(state => state.graphEditor.elements)
+  const [elements, setElements] = useState<Elements>(initialElements);
   const [nodeModalVisible, setNodeModalVisible] = useState<boolean>(false);
   const [elementsDrawerClosed, setElementsDrawerClosed] = useState<boolean>(true);
   const [historyDrawerClosed, setHistoryDrawerClosed] = useState<boolean>(true);
   const [modelCategories, setModelCategories] = useState<Array<ModelCategory> | undefined>([])
   const [selectedNode, setSelectedNode] = useState<Node | undefined>();
-
-  const [form] = Form.useForm();
 
   useEffect(() => {    
     CSApi.get('/categorized_models' )
@@ -77,12 +69,12 @@ export const GraphEditor = () => {
 
 
   const onElementsRemove = (elementsToRemove: Elements) => {
-    dispatch(setElements((removeElements(elementsToRemove, elements))));
+    setElements((els) => removeElements(elementsToRemove, els));
   }
     
 
   const onConnect = (params: Edge | Connection) => {
-    dispatch(setElements(addEdge(params, elements)));
+    setElements((els) => addEdge(params, els));
   }
   
   const getNodeId = () => `node_${+new Date()}`;
@@ -103,25 +95,22 @@ export const GraphEditor = () => {
     setHistoryDrawerClosed(true)
   };
 
-  const onNodeDoubleClick = useCallback((event, node: Node) => {
+  const onNodeDoubleClick = (event: any, node: Node) => {
     setSelectedNode(node);
     setNodeModalVisible(true);
-    console.log(node);
-  }, [setSelectedNode]);
+  };
 
-  const addNode = (model: Model) => {
+  const addNode = useCallback((model: Model) => {
 
     var nodeType = "default"
     if (model.system.connections.length === 1) {
       nodeType = "input"
     }
 
-    let m = cloneDeep(model);
-
     const newNode: Node = {
       id: getNodeId(),
       type: nodeType,
-      data: { label: m.name, model: m},
+      data: { label: model.name, model: model},
       position: {
         x: window.innerWidth / 2.7,
         y: window.innerHeight / 2.7,
@@ -129,29 +118,13 @@ export const GraphEditor = () => {
       sourcePosition: Position.Right,
       targetPosition: Position.Left,
     };
+    setElements((els) => els.concat(newNode));
 
-    dispatch(setElements(elements.concat(newNode)));
-    
-  };
+  }, [setElements]);
 
   const onAddElement = (model: Model) => {
     addNode(model);
-    console.log("new elements", elements);
   };
-
-  const onParameterFormValuesChanged = (changedValues: any, allValues: any) => {
-    let parameters: Parameter[] = []
-    for (const [key, value] of Object.entries(allValues)) {
-      parameters.push({name: key, value: Number(value)})
-    }
-    console.log(selectedNode!.data)
-    selectedNode!.data = {...selectedNode!.data, model: {
-        ...selectedNode!.data.model, system: {
-          ...selectedNode!.data.model.system, parameters: parameters
-        }
-      } 
-    };
-  }
 
   return (
     <ReactFlow 
@@ -216,24 +189,12 @@ export const GraphEditor = () => {
           closable
           visible={nodeModalVisible}
           footer={null}
-          onCancel={() => setNodeModalVisible(false)}
+          onCancel={() => {setNodeModalVisible(false);}}
+          destroyOnClose={true}
         >
-          <div>
-          <Form
-            form={form}
-            name={selectedNode?.data.label}
-            layout="horizontal"
-            style={{margin: "24px"}}
-            onValuesChange={onParameterFormValuesChanged} 
-            // wrapperCol={{ span: 4 }}
-          >
-            {selectedNode?.data.model.system.parameters.map((parameter: Parameter) => (
-              <Form.Item initialValue={parameter.value} name={parameter.name} key={parameter.name} required label={parameter.name}>
-                <Input />
-              </Form.Item>
-            ))}
-          </Form>
-          </div>
+          {selectedNode && 
+            <ParameterForm selectedNode={selectedNode} elements={elements} setElements={setElements} />
+          }
       </Modal>
     </ReactFlow>
   );
