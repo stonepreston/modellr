@@ -2,7 +2,10 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 import { 
     Elements,
-    FlowTransform
+    FlowTransform,
+    FlowElement,
+    isNode,
+    isEdge
 } from 'react-flow-renderer/nocss';
 
 interface GraphEditorState {  
@@ -37,6 +40,28 @@ export const selectElements = (state: GraphEditorState) => {
 
 export const selectTransform = (state: GraphEditorState) => {
   return state.transform;
+}
+
+export const selectModelNodes = (state: GraphEditorState) => {
+  let modelNodes: FlowElement[] = []
+  state.elements.forEach(function (element: FlowElement) {
+    if (isNode(element)) {
+      modelNodes.push(element);
+    }
+  });
+
+  return modelNodes;
+}
+
+export const selectEdgeNodes = (state: GraphEditorState) => {
+  let edgeNodes: FlowElement[] = []
+  state.elements.forEach(function (element: FlowElement) {
+    if (isEdge(element)) {
+      edgeNodes.push(element);
+    }
+  });
+
+  return edgeNodes;
 }
 
 export const { setElements, setTransform } = graphEditorSlice.actions
