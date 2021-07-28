@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import  { useState, useEffect, useRef } from 'react';
 import ReactFlow from 'react-flow-renderer/nocss';
 import { ModelCategory, Model } from "../../types/index";
 import CSApi from "../API/CSApi"
 import { ParameterForm } from './ParameterForm'
-
+import { setElements, setTransform } from './graphEditorSlice'
+import { useAppSelector, useAppDispatch } from '../../hooks'
 import { 
   Drawer,
   Button,
@@ -37,6 +38,10 @@ import {
   ConnectionLineType,
   ConnectionMode,
   Node,
+  useStoreState,
+  FlowTransform,
+  Transform,
+  useZoomPanHelper
 } from 'react-flow-renderer/nocss';
 
 const { Panel } = Collapse;
@@ -47,15 +52,28 @@ const edgeTypes: EdgeTypesType = {
   smoothstep: SmoothStepEdge
 };
 
-const initialElements: Elements = [];
+// const initialElements: Elements = [];
 export const GraphEditor = () => {
 
-  const [elements, setElements] = useState<Elements>(initialElements);
+  const dispatch = useAppDispatch();
+  const elements = useAppSelector(state => state.graphEditor.elements)
+  const transformState = useAppSelector(state => state.graphEditor.transform)
   const [nodeModalVisible, setNodeModalVisible] = useState<boolean>(false);
   const [elementsDrawerClosed, setElementsDrawerClosed] = useState<boolean>(true);
   const [historyDrawerClosed, setHistoryDrawerClosed] = useState<boolean>(true);
   const [modelCategories, setModelCategories] = useState<Array<ModelCategory> | undefined>([])
   const [selectedNode, setSelectedNode] = useState<Node | undefined>();
+  const storeTransform: Transform = useStoreState((store) => store.transform);
+  const storeTransformRef = useRef(storeTransform);
+
+  const { transform } = useZoomPanHelper();
+
+  // sets the initial transform based on state
+  // its also necessary to set the default position prop
+  // of the react flow component
+  const onLoad = (reactFlowInstance: any) => {
+    transform(transformState);
+  };
 
   useEffect(() => {    
     CSApi.get('/categorized_models' )
@@ -65,16 +83,35 @@ export const GraphEditor = () => {
       .catch(error => {
         console.log(`Error fetching categorized models: ${error}`)
       });
+
   }, []);
+
+  // this is used to grab the current transform from the internal
+  // react flow store whenever it changes
+  useEffect(() => {   
+      storeTransformRef.current = storeTransform;
+  }, [storeTransform]);
+
+  // runs when the component unmounts
+  // updates the (non-react-flow) redux store with the final transform
+  useEffect(() => {   
+    return () => {
+      console.log("setting new state before leaving");
+      let newTransform: FlowTransform = {x: storeTransformRef.current[0], 
+                                         y: storeTransformRef.current[1], 
+                                         zoom: storeTransformRef.current[2]}
+      dispatch(setTransform(newTransform));
+    } 
+  }, [dispatch]);
 
 
   const onElementsRemove = (elementsToRemove: Elements) => {
-    setElements((els) => removeElements(elementsToRemove, els));
+    dispatch(setElements((removeElements(elementsToRemove, elements))));
   }
     
 
   const onConnect = (params: Edge | Connection) => {
-    setElements((els) => addEdge(params, els));
+    dispatch(setElements(addEdge(params, elements)));
   }
   
   const getNodeId = () => `node_${+new Date()}`;
@@ -100,7 +137,7 @@ export const GraphEditor = () => {
     setNodeModalVisible(true);
   };
 
-  const addNode = useCallback((model: Model) => {
+  const addNode = (model: Model) => {
 
     var nodeType = "default"
     if (model.system.connections.length === 1) {
@@ -118,9 +155,9 @@ export const GraphEditor = () => {
       sourcePosition: Position.Right,
       targetPosition: Position.Left,
     };
-    setElements((els) => els.concat(newNode));
+    dispatch(setElements(elements.concat(newNode)));
 
-  }, [setElements]);
+  }
 
   const onAddElement = (model: Model) => {
     addNode(model);
@@ -136,6 +173,8 @@ export const GraphEditor = () => {
       connectionLineType={ConnectionLineType.Step}
       connectionMode={ConnectionMode.Loose}
       onNodeDoubleClick={(event, node) => {onNodeDoubleClick(event, node);}}
+      onLoad={onLoad}
+      defaultPosition={[transformState.x, transformState.y]}
     >
       <Drawer
         title="Elements"
@@ -193,7 +232,9 @@ export const GraphEditor = () => {
           destroyOnClose={true}
         >
           {selectedNode && 
-            <ParameterForm selectedNode={selectedNode} elements={elements} setElements={setElements} />
+            <ParameterForm selectedNode={selectedNode} elements={elements} setElements={
+              (els: Elements) => {dispatch(setElements(els))}
+            } />
           }
       </Modal>
     </ReactFlow>

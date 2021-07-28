@@ -36,8 +36,8 @@ export const ParameterForm = ({ selectedNode, elements, setElements }: Parameter
       } 
     };
 
-    setElements((els: Elements) =>
-      els.map((e) => {
+    setElements(
+      elements.map((e) => {
         if (e.id === selectedNode.id) {
           return {...e, data: {
                     ...selectedNode.data, labelmodel: {
