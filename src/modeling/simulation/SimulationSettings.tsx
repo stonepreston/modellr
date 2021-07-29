@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import { send } from '../../sockets/sockets'
 import { 
   Form, 
   Input, 
@@ -8,6 +10,7 @@ import {
   Modal,
   Drawer
 } from 'antd';
+
 import {
   LineChartOutlined,
   CalendarOutlined
@@ -15,10 +18,35 @@ import {
 
 import './SimulationSettings.less';
 const { Step } = Steps;
+
+
 export const SimulationSettings = () => {
   const [form] = Form.useForm();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [historyDrawerClosed, setHistoryDrawerClosed] = useState<boolean>(true);
+  const socket = useRef(new WebSocket("ws://127.0.0.1:8081"));
+  const socketID = useRef(uuidv4());
+
+  useEffect(() => {
+
+    socket.current.onopen = () => {
+      console.log('Connected to websocket server');
+    };
+
+
+    socket.current.onmessage = (message) => {
+      console.log("Get message from server: " + message);
+    };
+
+    let s = socket.current;
+    let id = socketID.current
+    return () => {
+      console.log("closing websocket connection");
+      send(s, id, "disconnect");
+      s.close();
+    }
+
+  }, []);
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -38,6 +66,12 @@ export const SimulationSettings = () => {
 
   const onCloseHistoryDrawer = () => {
     setHistoryDrawerClosed(true)
+  };
+
+  const onSimulateButtonPressed = () => {
+    showModal();
+    console.log("sending message");
+    send(socket.current, socketID.current, "hello", {asdf: "hi how are you"});
   };
 
   return (
@@ -73,7 +107,7 @@ export const SimulationSettings = () => {
             <Select.Option value="Tsit5">Tsit5</Select.Option>
           </Select>
         </Form.Item>
-        <Button className="button" type="primary" onClick={showModal}>Simulate</Button>
+        <Button className="button" type="primary" onClick={onSimulateButtonPressed}>Simulate</Button>
         <Button className="button" icon={<LineChartOutlined />} disabled={true}>Results</Button>
         <Button className="button"icon={<CalendarOutlined />} onClick={showHistoryDrawer}>Simulation History</Button>
       </Form>
