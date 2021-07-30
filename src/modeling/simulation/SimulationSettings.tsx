@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { send } from '../../sockets/sockets'
+import { useAppSelector, useAppDispatch } from '../../hooks'
+import { selectModelNodes, selectEdgeNodes } from '../graph_editor/graphEditorSlice'
 import { 
   Form, 
   Input, 
@@ -21,6 +23,10 @@ const { Step } = Steps;
 
 
 export const SimulationSettings = () => {
+  const modelNodes = useAppSelector(state => selectModelNodes(state));
+  const edgeNodes = useAppSelector(state => selectEdgeNodes(state));
+  const elements = useAppSelector(state => state.graphEditor.elements);
+  
   const [form] = Form.useForm();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [historyDrawerClosed, setHistoryDrawerClosed] = useState<boolean>(true);
@@ -31,6 +37,7 @@ export const SimulationSettings = () => {
 
     socket.current.onopen = () => {
       console.log('Connected to websocket server');
+      send(socket.current, socketID.current, "connect");
     };
 
 
@@ -70,8 +77,12 @@ export const SimulationSettings = () => {
 
   const onSimulateButtonPressed = () => {
     showModal();
-    console.log("sending message");
-    send(socket.current, socketID.current, "hello", {asdf: "hi how are you"});
+    console.log("elements: ");
+    console.log(elements);
+    let modelData = {modelNodes: modelNodes, edgeNodes: edgeNodes};
+    console.log("sending model to server");
+    console.log(modelData)
+    send(socket.current, socketID.current, "build_model", modelData);
   };
 
   return (

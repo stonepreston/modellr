@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-
+import type { RootState } from '../../store'
 import { 
     Elements,
     FlowTransform,
@@ -33,18 +33,18 @@ export const graphEditorSlice = createSlice({
   }
 });
 
-export const selectElements = (state: GraphEditorState) => {
-  return state.elements;
+export const selectElements = (state: RootState) => {
+  return state.graphEditor.elements;
 }
 
 
-export const selectTransform = (state: GraphEditorState) => {
-  return state.transform;
+export const selectTransform = (state: RootState) => {
+  return state.graphEditor.transform;
 }
 
-export const selectModelNodes = (state: GraphEditorState) => {
+export const selectModelNodes = (state: RootState) => {
   let modelNodes: FlowElement[] = []
-  state.elements.forEach(function (element: FlowElement) {
+  state.graphEditor.elements.forEach(function (element: FlowElement) {
     if (isNode(element)) {
       modelNodes.push(element);
     }
@@ -53,9 +53,9 @@ export const selectModelNodes = (state: GraphEditorState) => {
   return modelNodes;
 }
 
-export const selectEdgeNodes = (state: GraphEditorState) => {
+export const selectEdgeNodes = (state: RootState) => {
   let edgeNodes: FlowElement[] = []
-  state.elements.forEach(function (element: FlowElement) {
+  state.graphEditor.elements.forEach(function (element: FlowElement) {
     if (isEdge(element)) {
       edgeNodes.push(element);
     }
