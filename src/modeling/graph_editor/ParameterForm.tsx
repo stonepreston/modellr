@@ -40,7 +40,7 @@ export const ParameterForm = ({ selectedNode, elements, setElements }: Parameter
       elements.map((e) => {
         if (e.id === selectedNode.id) {
           return {...e, data: {
-                    ...selectedNode.data, labelmodel: {
+                    ...selectedNode.data, model: {
                       ...selectedNode.data.model, system: {
                         ...selectedNode.data.model.system, parameters: parameters
                 }
