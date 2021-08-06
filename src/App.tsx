@@ -21,6 +21,8 @@ import {
 import { GraphEditor } from './modeling/graph_editor/GraphEditor'
 import { SimulationSettings } from './modeling/simulation/SimulationSettings'
 import { ParameterEstimationSettings } from './modeling/parameter_estimation/ParameterEstimationSettings'
+import { Results } from './modeling/results/Results'
+
 const { Header, Content, Sider } = Layout;
 const { SubMenu } = Menu;
 
@@ -105,6 +107,9 @@ const App: FC = () => {
                 </Route>
                 <Route path="/parameter_estimation">
                   <ParameterEstimationSettings />
+                </Route>
+                <Route path="/results">
+                  <Results />
                 </Route>
               </Switch>
             </Content>

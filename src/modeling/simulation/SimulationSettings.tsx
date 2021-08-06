@@ -14,6 +14,10 @@ import {
 } from 'antd';
 
 import {
+  Link
+} from "react-router-dom";
+
+import {
   LineChartOutlined,
   CalendarOutlined
 } from '@ant-design/icons';
@@ -42,7 +46,7 @@ export const SimulationSettings = () => {
 
 
     socket.current.onmessage = (message) => {
-      console.log("Get message from server: " + message);
+      console.log("Get message from server: ", message);
     };
 
     let s = socket.current;
@@ -119,7 +123,11 @@ export const SimulationSettings = () => {
           </Select>
         </Form.Item>
         <Button className="button" type="primary" onClick={onSimulateButtonPressed}>Simulate</Button>
-        <Button className="button" icon={<LineChartOutlined />} disabled={true}>Results</Button>
+        <Link to="/results">
+          <Button className="button" icon={<LineChartOutlined />} disabled={false}>
+            Results
+          </Button>
+        </Link>
         <Button className="button"icon={<CalendarOutlined />} onClick={showHistoryDrawer}>Simulation History</Button>
       </Form>
 
@@ -129,7 +137,7 @@ export const SimulationSettings = () => {
         visible={isModalVisible} 
         onOk={handleOk} 
         onCancel={handleCancel} 
-        okText="View Results"
+        okText="Ok"
         okButtonProps={{disabled: true}}
       >
         <Steps current={1} style={{padding: "24px"}}>
