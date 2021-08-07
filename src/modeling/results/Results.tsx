@@ -5,12 +5,15 @@ import {
   Button, 
   Drawer,
   Tree,
-  Typography
+  Typography,
+  Modal,
+  Table
 } from 'antd';
 
 import {
   LeftOutlined,
-  SettingOutlined
+  SettingOutlined,
+  TableOutlined
 } from '@ant-design/icons';
 
 import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -20,57 +23,26 @@ import {
 } from "react-router-dom";
 
 import './Results.less';
-
-const data = [
-  {
-    name: 'Page A',
-    uv: 4000,
-    pv: 2400,
-    amt: 2400,
-  },
-  {
-    name: 'Page B',
-    uv: 3000,
-    pv: 1398,
-    amt: 2210,
-  },
-  {
-    name: 'Page C',
-    uv: 2000,
-    pv: 9800,
-    amt: 2290,
-  },
-  {
-    name: 'Page D',
-    uv: 2780,
-    pv: 3908,
-    amt: 2000,
-  },
-  {
-    name: 'Page E',
-    uv: 1890,
-    pv: 4800,
-    amt: 2181,
-  },
-  {
-    name: 'Page F',
-    uv: 2390,
-    pv: 3800,
-    amt: 2500,
-  },
-  {
-    name: 'Page G',
-    uv: 3490,
-    pv: 4300,
-    amt: 2100,
-  },
-];
+import { isNull } from 'lodash';
 
 const { Title } = Typography;
 export const Results = () => {
 
   const [settingsDrawerClosed, setSettingsDrawerClosed] = useState<boolean>(true);
+  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [chartData, setChartData] = useState<ResultItem[]>([]);
+
+  const showModal = () => {
+    setIsModalVisible(true);
+  };
+
+  const handleOk = () => {
+    setIsModalVisible(false);
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
+  };
 
   const showSettingsDrawer = () => {
     setSettingsDrawerClosed(false);
@@ -158,6 +130,19 @@ export const Results = () => {
   let results: ResultItem[] = JSON.parse(JSON.stringify(useAppSelector(state => selectResults(state))));
   console.log("results: ", results);
 
+  const columns = [
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: 'Value',
+      dataIndex: 'value',
+      key: 'value',
+    },
+  ];
+
   return (
     <div style={{margin: "24px"}}>
        <Drawer
@@ -173,18 +158,27 @@ export const Results = () => {
       >
         <Tree
           checkable
-          defaultExpandedKeys={['0-0-0', '0-0-1']}
-          defaultSelectedKeys={['0-0-0', '0-0-1']}
-          defaultCheckedKeys={['0-0-0', '0-0-1']}
+          defaultExpandedKeys={getResultCategories(results)}
           onSelect={onSelect}
           onCheck={onCheck}
           treeData={getResultTree(results)}
         />
       </Drawer>
 
-      <Link to="/simulation">
+      <Modal 
+        width="800px" 
+        title="Results" 
+        visible={isModalVisible} 
+        footer={null}
+        onCancel={handleCancel} 
+      >
+        <Table dataSource={chartData} columns={columns} pagination={false}/>
+      </Modal>
+
+      <Link to="/simulation" style={{float: "left"}}>
         <Button icon={<LeftOutlined />}/>
       </Link>
+      <Button icon={<TableOutlined />} style={{marginLeft: "10px"}}onClick={showModal}/>
       <Button icon={<SettingOutlined />} onClick={showSettingsDrawer} style={{float: "right"}}/>
       <div className="chart">
         {(chartData.length !== 0) &&
@@ -203,12 +197,12 @@ export const Results = () => {
             <CartesianGrid strokeDasharray="3 3" stroke="white" />
             <XAxis dataKey="name" stroke="white"/>
             <YAxis stroke="white"/>
-            <Bar dataKey="value" fill="#1890ff" />
+            <Bar dataKey="value" fill="gray" />
           </BarChart>
         </ResponsiveContainer>
       }
       {chartData.length === 0 &&
-        <Title level={3}>Press <SettingOutlined /> to add some data!</Title>
+        <Title level={3}>Press <SettingOutlined /> to add some data</Title>
       }
       </div>
     </div>
