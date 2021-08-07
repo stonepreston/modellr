@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAppSelector, useAppDispatch } from '../../hooks'
+import { useAppSelector } from '../../hooks'
 import { ResultItem, selectResults } from '../results/resultsSlice'
 import { 
   Button, 
@@ -16,14 +16,13 @@ import {
   TableOutlined
 } from '@ant-design/icons';
 
-import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 
 import {
   Link
 } from "react-router-dom";
 
 import './Results.less';
-import { isNull } from 'lodash';
 
 const { Title } = Typography;
 export const Results = () => {
@@ -34,10 +33,6 @@ export const Results = () => {
 
   const showModal = () => {
     setIsModalVisible(true);
-  };
-
-  const handleOk = () => {
-    setIsModalVisible(false);
   };
 
   const handleCancel = () => {
@@ -119,7 +114,7 @@ export const Results = () => {
     let temp = []
     for (let checkedNode of info.checkedNodes) {
       for (let resultItem of results) {
-        if (checkedNode.key == resultItem.name) {
+        if (checkedNode.key === resultItem.name) {
           temp.push(resultItem);
         }
       }

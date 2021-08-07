@@ -65,16 +65,16 @@ export const ParameterForm = ({ selectedNode, elements, setElements }: Parameter
     <Form
       name={selectedNode.data.label}
       layout="horizontal"
-      style={{margin: "24px"}}
+      style={{margin: "12px"}}
       onValuesChange={onParameterFormValuesChanged} 
       initialValues={getInitialFieldValues()}
     >
-      <Form.Item name="element_name" key="element_name" required label="Name">
-        <Input />
+      <Form.Item name="element_name" key="element_name">
+        <Input addonBefore="Name"/>
       </Form.Item>
       {selectedNode.data.model.system.parameters.map((parameter: Parameter) => (
-      <Form.Item name={parameter.name} key={parameter.name} required label={parameter.name}>
-        <Input />
+      <Form.Item name={parameter.name} key={parameter.name}>
+        <Input addonBefore={parameter.name}/>
       </Form.Item>
       ))}
     </Form>

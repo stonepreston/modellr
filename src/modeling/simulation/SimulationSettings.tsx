@@ -133,13 +133,13 @@ export const SimulationSettings = () => {
         style={{margin: "24px"}}
         // wrapperCol={{ span: 4 }}
       >
-        <Form.Item required label="Start Time (s)">
-          <Input placeholder="0.0" />
+        <Form.Item>
+          <Input addonBefore="Start Time (s)" placeholder="0.0" />
         </Form.Item>
-        <Form.Item required label="End Time (s)">
-          <Input placeholder="0.0" />
+        <Form.Item>
+          <Input addonBefore="End Time (s)" placeholder="0.0" />
         </Form.Item>
-        <Form.Item required label="Solver">
+        <Form.Item label="Solver">
           <Select defaultValue="Rodas4">
             <Select.Option value="Rodas4">Rodas4</Select.Option>
             <Select.Option value="Tsit5">Tsit5</Select.Option>
