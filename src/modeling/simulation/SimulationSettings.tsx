@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { send } from '../../sockets/sockets'
 import { useAppSelector, useAppDispatch } from '../../hooks'
 import { selectModelNodes, selectEdgeNodes } from '../graph_editor/graphEditorSlice'
+import { setResults, ResultItem } from '../results/resultsSlice'
 import { 
   Form, 
   Input, 
@@ -25,15 +26,22 @@ import {
 import './SimulationSettings.less';
 const { Step } = Steps;
 
-
+enum SimulationStage {
+  Initializing = 0,
+  Simulating,
+  Done
+}
 export const SimulationSettings = () => {
+  const dispatch = useAppDispatch();
   const modelNodes = useAppSelector(state => selectModelNodes(state));
   const edgeNodes = useAppSelector(state => selectEdgeNodes(state));
   const elements = useAppSelector(state => state.graphEditor.elements);
   
   const [form] = Form.useForm();
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isSocketConnected, setIsSocketConnected] = useState<boolean>(false);
+  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [historyDrawerClosed, setHistoryDrawerClosed] = useState<boolean>(true);
+  const [simulationStage, setSimulationStage] = useState<SimulationStage>(SimulationStage.Initializing)
   const socket = useRef(new WebSocket("ws://127.0.0.1:8081"));
   const socketID = useRef(uuidv4());
 
@@ -42,11 +50,24 @@ export const SimulationSettings = () => {
     socket.current.onopen = () => {
       console.log('Connected to websocket server');
       send(socket.current, socketID.current, "connect");
+      setIsSocketConnected(true);
     };
 
 
     socket.current.onmessage = (message) => {
       console.log("Get message from server: ", message);
+      if (message.data === "simulating") {
+        setSimulationStage(SimulationStage.Simulating)
+      } else if (message.data === "done") {
+        setSimulationStage(SimulationStage.Done)
+      } else {
+        console.log("Got results!");
+        console.log("raw results: ", message.data);
+        const results: ResultItem[] = JSON.parse(message.data);
+        console.log("results in socket handler: ", results);
+        dispatch(setResults(results));
+      }
+
     };
 
     let s = socket.current;
@@ -57,7 +78,7 @@ export const SimulationSettings = () => {
       s.close();
     }
 
-  }, []);
+  }, [dispatch]);
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -80,6 +101,8 @@ export const SimulationSettings = () => {
   };
 
   const onSimulateButtonPressed = () => {
+    setSimulationStage(SimulationStage.Initializing);
+
     showModal();
     console.log("elements: ");
     console.log(elements);
@@ -114,7 +137,7 @@ export const SimulationSettings = () => {
           <Input placeholder="0.0" />
         </Form.Item>
         <Form.Item required label="End Time (s)">
-          <Input placeholder="1.0" />
+          <Input placeholder="0.0" />
         </Form.Item>
         <Form.Item required label="Solver">
           <Select defaultValue="Rodas4">
@@ -122,9 +145,9 @@ export const SimulationSettings = () => {
             <Select.Option value="Tsit5">Tsit5</Select.Option>
           </Select>
         </Form.Item>
-        <Button className="button" type="primary" onClick={onSimulateButtonPressed}>Simulate</Button>
+        <Button className="button" type="primary" disabled={!isSocketConnected} onClick={onSimulateButtonPressed}>Simulate</Button>
         <Link to="/results">
-          <Button className="button" icon={<LineChartOutlined />} disabled={false}>
+          <Button className="button" icon={<LineChartOutlined />} disabled={simulationStage !== SimulationStage.Done}>
             Results
           </Button>
         </Link>
@@ -138,11 +161,11 @@ export const SimulationSettings = () => {
         onOk={handleOk} 
         onCancel={handleCancel} 
         okText="Ok"
-        okButtonProps={{disabled: true}}
+        okButtonProps={{disabled: simulationStage !== SimulationStage.Done}}
       >
-        <Steps current={1} style={{padding: "24px"}}>
+        <Steps current={simulationStage} style={{padding: "24px"}}>
           <Step title="Initializing Model"/>
-          <Step title="Simulating" subTitle=" 00:00:08"/>
+          <Step title="Simulating"/>
           <Step title="Done"/>
         </Steps>
       </Modal>

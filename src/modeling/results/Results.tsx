@@ -1,16 +1,11 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { send } from '../../sockets/sockets'
+import React, { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '../../hooks'
-import { selectModelNodes, selectEdgeNodes } from '../graph_editor/graphEditorSlice'
+import { ResultItem, selectResults } from '../results/resultsSlice'
 import { 
-  Form, 
-  Input, 
   Button, 
-  Select, 
-  Steps, 
-  Modal,
   Drawer,
-  Tree
+  Tree,
+  Typography
 } from 'antd';
 
 import {
@@ -25,11 +20,6 @@ import {
 } from "react-router-dom";
 
 import './Results.less';
-
-interface ResultItem {
-  name: string;
-  value: number[];
-}
 
 const data = [
   {
@@ -76,10 +66,11 @@ const data = [
   },
 ];
 
-
+const { Title } = Typography;
 export const Results = () => {
 
   const [settingsDrawerClosed, setSettingsDrawerClosed] = useState<boolean>(true);
+  const [chartData, setChartData] = useState<ResultItem[]>([]);
 
   const showSettingsDrawer = () => {
     setSettingsDrawerClosed(false);
@@ -104,6 +95,12 @@ export const Results = () => {
     return results
   }
 
+  const formatResultsForChecklist = (results: ResultItem[]):ResultItem[] => {
+    let dots = removePlusSigns(results);
+    let tees = removeTs(dots);
+    return tees;
+  }
+
   const getResultCategories = (results: ResultItem[]) => {
 
     results = removePlusSigns(results);
@@ -123,7 +120,9 @@ export const Results = () => {
     children: ResultTreeItem[]
   }
   const getResultTree = (results: ResultItem[]) => {
-    let categories = getResultCategories(results);
+
+    let formattedResults = formatResultsForChecklist(results);
+    let categories = getResultCategories(formattedResults);
     let tree: ResultTreeItem[] = [];
     for (let category of categories) {
       let categoryTree: ResultTreeItem = {title: category, key: category, children: []}
@@ -145,12 +144,19 @@ export const Results = () => {
 
   const onCheck = (checked: React.Key[] | { checked: React.Key[]; halfChecked: React.Key[]; }, info: any) => {
     console.log('onCheck', checked, info);
+    let temp = []
+    for (let checkedNode of info.checkedNodes) {
+      for (let resultItem of results) {
+        if (checkedNode.key == resultItem.name) {
+          temp.push(resultItem);
+        }
+      }
+    }
+    setChartData(temp);
   };
 
-
-  const results: ResultItem[] = JSON.parse("[{\"name\":\"ideal_pressure_source_1₊a₊Q(t)\",\"value\":-11.470217164799628},{\"name\":\"static_pipe_1₊a₊Q(t)\",\"value\":11.470217164799628},{\"name\":\"ideal_pressure_source_1₊a₊p(t)\",\"value\":501325.0},{\"name\":\"static_pipe_1₊a₊p(t)\",\"value\":501325.0},{\"name\":\"static_pipe_1₊b₊Q(t)\",\"value\":-11.470217164799628},{\"name\":\"static_pipe_2₊a₊Q(t)\",\"value\":11.470217164799628},{\"name\":\"static_pipe_1₊b₊p(t)\",\"value\":301325.0000000001},{\"name\":\"static_pipe_2₊a₊p(t)\",\"value\":301325.0000000001},{\"name\":\"static_pipe_2₊b₊Q(t)\",\"value\":-11.470217164799628},{\"name\":\"ideal_pressure_source_2₊a₊Q(t)\",\"value\":11.470217164799628},{\"name\":\"static_pipe_2₊b₊p(t)\",\"value\":101325.0},{\"name\":\"ideal_pressure_source_2₊a₊p(t)\",\"value\":101325.0},{\"name\":\"static_pipe_2₊Δp(t)\",\"value\":200000.0000000001},{\"name\":\"static_pipe_2₊Q(t)\",\"value\":11.470217164799628},{\"name\":\"static_pipe_1₊Δp(t)\",\"value\":199999.99999999988},{\"name\":\"static_pipe_1₊Q(t)\",\"value\":11.470217164799628}]");
-  let dots = removePlusSigns(results);
-  let tees = removeTs(dots);
+  let results: ResultItem[] = JSON.parse(JSON.stringify(useAppSelector(state => selectResults(state))));
+  console.log("results: ", results);
 
   return (
     <div style={{margin: "24px"}}>
@@ -172,7 +178,7 @@ export const Results = () => {
           defaultCheckedKeys={['0-0-0', '0-0-1']}
           onSelect={onSelect}
           onCheck={onCheck}
-          treeData={getResultTree(tees)}
+          treeData={getResultTree(results)}
         />
       </Drawer>
 
@@ -181,11 +187,12 @@ export const Results = () => {
       </Link>
       <Button icon={<SettingOutlined />} onClick={showSettingsDrawer} style={{float: "right"}}/>
       <div className="chart">
+        {(chartData.length !== 0) &&
         <ResponsiveContainer width="70%" height="100%">
           <BarChart
             width={500}
             height={300}
-            data={data}
+            data={chartData}
             margin={{
               top: 5,
               right: 30,
@@ -196,10 +203,13 @@ export const Results = () => {
             <CartesianGrid strokeDasharray="3 3" stroke="white" />
             <XAxis dataKey="name" stroke="white"/>
             <YAxis stroke="white"/>
-            <Bar dataKey="pv" fill="#1890ff" />
-            <Bar dataKey="uv" fill="#1890ff" />
+            <Bar dataKey="value" fill="#1890ff" />
           </BarChart>
         </ResponsiveContainer>
+      }
+      {chartData.length === 0 &&
+        <Title level={3}>Press <SettingOutlined /> to add some data!</Title>
+      }
       </div>
     </div>
   );
