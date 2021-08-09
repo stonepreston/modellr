@@ -35,10 +35,15 @@ enum EstimationStage {
 }
 export const ParameterEstimationSettings = () => {
 
+  interface StatesObject {
+    [key: string]: any
+  }
+
   
   const [form] = Form.useForm();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedParameters, setSelectedParameters] = useState<string[]>([])
+  const [states, setStates] = useState<StatesObject>({})
   const [historyDrawerClosed, setHistoryDrawerClosed] = useState<boolean>(true);
   const [isSocketConnected, setIsSocketConnected] = useState<boolean>(false);
   const [estimationStage, setEstimationStage] = useState<EstimationStage>(EstimationStage.Initializing)
@@ -49,19 +54,16 @@ export const ParameterEstimationSettings = () => {
   const socket = useRef(new WebSocket("ws://127.0.0.1:8081"));
   const socketID = useRef(uuidv4());
   
-  interface StatesObject {
-    [key: string]: any
-  }
-
-  let states: StatesObject = {}
-
-  for (let modelNode of modelNodes) {
-    for (let state of modelNode.data.model.system.states) {
-      states[`${modelNode.data.label}.${state}`] = ""
-    }
-  }
-
   useEffect(() => {
+
+    let tempStates: StatesObject = {}
+    for (let modelNode of modelNodes) {
+      for (let state of modelNode.data.model.system.states) {
+        tempStates[`${modelNode.data.label}.${state}`] = ""
+      }
+    }
+
+    setStates(tempStates)
 
     socket.current.onopen = () => {
       console.log('Connected to websocket server');
@@ -72,6 +74,15 @@ export const ParameterEstimationSettings = () => {
 
     socket.current.onmessage = (message) => {
       console.log("Get message from server: ", message);
+      if (message.data === "optimizing") {
+        setEstimationStage(EstimationStage.Optimizing);
+      } else if (message.data === "done") {
+        setEstimationStage(EstimationStage.Done);
+      } else {
+        console.log("Got parameters!");
+        console.log("optimized parameters: ", message.data);
+        
+      }
     };
 
     let s = socket.current;
@@ -160,8 +171,11 @@ export const ParameterEstimationSettings = () => {
   };
 
   const onInputChange = (e: React.FormEvent<HTMLInputElement>) => {
-    states[(e.target as HTMLElement).id] = e.currentTarget.value;
-    console.log(states);
+
+    let tempStates: StatesObject = states;
+    tempStates[(e.target as HTMLElement).id] = e.currentTarget.value;
+    setStates(tempStates);
+    console.log(tempStates);
   }
 
   const onEstimateButtonPressed = () => {
