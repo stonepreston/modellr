@@ -42,7 +42,6 @@ export const ParameterEstimationSettings = () => {
   
   const [form] = Form.useForm();
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [selectedParameters, setSelectedParameters] = useState<string[]>([])
   const [states, setStates] = useState<StatesObject>({})
   const [historyDrawerClosed, setHistoryDrawerClosed] = useState<boolean>(true);
   const [isSocketConnected, setIsSocketConnected] = useState<boolean>(false);
@@ -95,42 +94,6 @@ export const ParameterEstimationSettings = () => {
 
   }, []);
 
-  const getParameterCategories = (modelNodes: FlowElement[]) => {
-    let categories: string[] = []
-    for (let modelNode of modelNodes) {
-      categories.push(modelNode.data.label)
-    }
-
-    return categories
-  }
-
-  interface ParameterTreeItem {
-    title: string;
-    key: string;
-    children: ParameterTreeItem[]
-  }
-
-  const getParametersTree = (modelNodes: FlowElement[]) => {
-
-    let categories = getParameterCategories(modelNodes);
-    let tree: ParameterTreeItem[] = [];
-    for (let category of categories) {
-      let parametersTree: ParameterTreeItem = {title: category, key: category, children: []}
-      for (let modelNode of modelNodes) {
-        let elementName = modelNode.data.label;
-        if (elementName === category) {
-          for (let parameter of modelNode.data.model.system.parameters) {
-            let childTree: ParameterTreeItem = {title: parameter.name, key: `${elementName}.${parameter.name}`, children: []}
-            parametersTree.children.push(childTree)
-          }
-        }
-      }
-      tree.push(parametersTree);
-    }
-
-    return tree;
-  }
-
   const showModal = () => {
     setIsModalVisible(true);
   };
@@ -151,25 +114,6 @@ export const ParameterEstimationSettings = () => {
     setHistoryDrawerClosed(true)
   };
 
-  const onSelect = (selectedKeys: React.Key[], info: any) => {
-    console.log('selected', selectedKeys, info);
-  };
-
-  const onCheck = (checked: React.Key[] | { checked: React.Key[]; halfChecked: React.Key[]; }, info: any) => {
-    console.log('onCheck');
-    let temp = [];
-    for (let checkedNode of info.checkedNodes) {
-      if (checkedNode.key.includes(".")) {
-        // if it includes a dot then its a element.paramtername type thing
-        // and not a root folder (just a element name)
-        temp.push(checkedNode.key);
-      }
-    }
-    console.log("Selected parameters: ");
-    console.log(temp);
-    setSelectedParameters(temp);
-  };
-
   const onInputChange = (e: React.FormEvent<HTMLInputElement>) => {
 
     let tempStates: StatesObject = states;
@@ -180,7 +124,7 @@ export const ParameterEstimationSettings = () => {
 
   const onEstimateButtonPressed = () => {
     showModal();
-    let modelData = {modelNodes: modelNodes, edgeNodes: edgeNodes, selectedParameters: selectedParameters, states: states};
+    let modelData = {modelNodes: modelNodes, edgeNodes: edgeNodes, states: states};
     console.log("sending model to server");
     console.log(modelData)
     send(socket.current, socketID.current, "estimate_parameters", modelData);
@@ -200,13 +144,7 @@ export const ParameterEstimationSettings = () => {
         headerStyle={{marginTop: "9px"}}
       >
       </Drawer>
-      <Title level={5}>Select Parameters</Title>
-      <Tree
-          checkable
-          onSelect={onSelect}
-          onCheck={onCheck}
-          treeData={getParametersTree(modelNodes)}
-      />
+
       <Title level={5}>Specify States</Title>
       <Collapse defaultActiveKey={[]} style={{marginBottom: "10px"}}>
         {modelNodes.map((modelNode) => {

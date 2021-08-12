@@ -7,8 +7,14 @@ export interface Parameter {
     value: number;
 }
 
+export interface Argument {
+    name: string;
+    value: number;
+}
+
 export interface System {
     parameters: [Parameter];
+    arguments: [Argument];
     states: [string];
     equations: [string];
     connections: [string];
