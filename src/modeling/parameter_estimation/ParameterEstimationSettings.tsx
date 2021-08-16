@@ -18,6 +18,7 @@ import {
   Tree,
   Typography,
   Collapse,
+  Table
 } from 'antd';
 import {
   CalendarOutlined
@@ -27,6 +28,19 @@ import './ParameterEstimationSettings.less';
 const { Title } = Typography;
 const { Step } = Steps;
 const { Panel } = Collapse;
+
+const columns = [
+  {
+    title: 'Parameter',
+    dataIndex: 'name',
+    key: 'name',
+  },
+  {
+    title: 'Optimized Value',
+    dataIndex: 'value',
+    key: 'value',
+  },
+];
 
 enum EstimationStage {
   Initializing = 0,
@@ -39,13 +53,19 @@ export const ParameterEstimationSettings = () => {
     [key: string]: any
   }
 
+  interface OptimizedParameter {
+    name: string;
+    value: number;
+  }
+
   
   const [form] = Form.useForm();
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [states, setStates] = useState<StatesObject>({})
+  const [states, setStates] = useState<StatesObject>({});
+  const [optimizedParameters, setOptimizedParameters] = useState<OptimizedParameter[]>([]);
   const [historyDrawerClosed, setHistoryDrawerClosed] = useState<boolean>(true);
   const [isSocketConnected, setIsSocketConnected] = useState<boolean>(false);
-  const [estimationStage, setEstimationStage] = useState<EstimationStage>(EstimationStage.Initializing)
+  const [estimationStage, setEstimationStage] = useState<EstimationStage>(EstimationStage.Initializing);
 
   const dispatch = useAppDispatch();
   const modelNodes = useAppSelector(state => selectModelNodes(state));
@@ -79,7 +99,9 @@ export const ParameterEstimationSettings = () => {
         setEstimationStage(EstimationStage.Done);
       } else {
         console.log("Got parameters!");
-        console.log("optimized parameters: ", message.data);
+        let params: OptimizedParameter[] = JSON.parse(message.data);
+        console.log("optimized parameters: ", params);
+        setOptimizedParameters(JSON.parse(message.data));
         
       }
     };
@@ -164,7 +186,7 @@ export const ParameterEstimationSettings = () => {
         layout="vertical"
         // wrapperCol={{ span: 4 }}
       >
-        <Button className="button" type="primary" onClick={onEstimateButtonPressed}>Estimate</Button>
+        <Button className="button" disabled={!isSocketConnected} type="primary" onClick={onEstimateButtonPressed}>Estimate</Button>
         <Button className="button"icon={<CalendarOutlined />} onClick={showHistoryDrawer}>Parameter Estimation History</Button>
       </Form>
 
@@ -174,14 +196,17 @@ export const ParameterEstimationSettings = () => {
         visible={isModalVisible} 
         onOk={handleOk} 
         onCancel={handleCancel} 
-        okText="Apply parameters to model"
-        okButtonProps={{disabled: true}}
+        okText="Ok"
+        okButtonProps={{disabled: !(estimationStage === EstimationStage.Done)}}
       >
         <Steps current={estimationStage} style={{padding: "24px"}}>
           <Step title="Initializing Model"/>
           <Step title="Optimizing" />
           <Step title="Done"/>
         </Steps>
+        {estimationStage === EstimationStage.Done &&
+          <Table dataSource={optimizedParameters} columns={columns} pagination={false}/>
+        }
       </Modal>
     </div>
   );
