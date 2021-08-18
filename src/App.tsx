@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, useEffect } from 'react';
 import {
   BrowserRouter as Router,
   Switch,
@@ -22,6 +22,15 @@ import { GraphEditor } from './modeling/graph_editor/GraphEditor'
 import { SimulationSettings } from './modeling/simulation/SimulationSettings'
 import { ParameterEstimationSettings } from './modeling/parameter_estimation/ParameterEstimationSettings'
 import { Results } from './modeling/results/Results'
+import { v4 as uuidv4 } from 'uuid';
+import { send } from './sockets/sockets'
+const socket = new WebSocket("ws://127.0.0.1:8081");
+const socketID = uuidv4();
+socket.onopen = () => {
+  console.log('Connected to websocket server');
+  send(socket, socketID, "connect");
+};
+
 
 const { Header, Content, Sider } = Layout;
 const { SubMenu } = Menu;
@@ -50,6 +59,16 @@ const treeData = [
 const App: FC = () => {
 
   const [siderCollapsed, setSiderCollapsed] = React.useState<boolean>(false);
+
+  useEffect(() => {
+
+    return () => {
+      console.log("closing websocket connection");
+      send(socket, socketID, "disconnect");
+      socket.close();
+    }
+
+  }, []);
 
   function toggleSider() {
     setSiderCollapsed(!siderCollapsed)
@@ -103,10 +122,10 @@ const App: FC = () => {
                   </div>
                 </Route>
                 <Route path="/simulation">
-                  <SimulationSettings />
+                  <SimulationSettings socket={socket} socketID={socketID}/>
                 </Route>
                 <Route path="/parameter_estimation">
-                  <ParameterEstimationSettings />
+                  <ParameterEstimationSettings socket={socket} socketID={socketID} />
                 </Route>
                 <Route path="/results">
                   <Results />

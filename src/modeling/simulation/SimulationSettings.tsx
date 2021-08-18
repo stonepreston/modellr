@@ -1,5 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import React, { useEffect, useState } from 'react';
 import { send } from '../../sockets/sockets'
 import { useAppSelector, useAppDispatch } from '../../hooks'
 import { selectModelNodes, selectEdgeNodes } from '../graph_editor/graphEditorSlice'
@@ -31,30 +30,27 @@ enum SimulationStage {
   Simulating,
   Done
 }
-export const SimulationSettings = () => {
+
+type SimulationSettingsProps = {
+  socket: WebSocket;
+  socketID: string;
+}
+
+
+export const SimulationSettings = ({ socket, socketID }: SimulationSettingsProps) => {
   const dispatch = useAppDispatch();
   const modelNodes = useAppSelector(state => selectModelNodes(state));
   const edgeNodes = useAppSelector(state => selectEdgeNodes(state));
   const elements = useAppSelector(state => state.graphEditor.elements);
   
   const [form] = Form.useForm();
-  const [isSocketConnected, setIsSocketConnected] = useState<boolean>(false);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [historyDrawerClosed, setHistoryDrawerClosed] = useState<boolean>(true);
   const [simulationStage, setSimulationStage] = useState<SimulationStage>(SimulationStage.Initializing)
-  const socket = useRef(new WebSocket("ws://127.0.0.1:8081"));
-  const socketID = useRef(uuidv4());
-
+  
   useEffect(() => {
 
-    socket.current.onopen = () => {
-      console.log('Connected to websocket server');
-      send(socket.current, socketID.current, "connect");
-      setIsSocketConnected(true);
-    };
-
-
-    socket.current.onmessage = (message) => {
+    socket.onmessage = (message) => {
       console.log("Get message from server: ", message);
       if (message.data === "simulating") {
         setSimulationStage(SimulationStage.Simulating)
@@ -70,15 +66,7 @@ export const SimulationSettings = () => {
 
     };
 
-    let s = socket.current;
-    let id = socketID.current
-    return () => {
-      console.log("closing websocket connection");
-      send(s, id, "disconnect");
-      s.close();
-    }
-
-  }, [dispatch]);
+  }, [dispatch, socket]);
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -109,7 +97,7 @@ export const SimulationSettings = () => {
     let modelData = {modelNodes: modelNodes, edgeNodes: edgeNodes};
     console.log("sending model to server");
     console.log(modelData)
-    send(socket.current, socketID.current, "build_model", modelData);
+    send(socket, socketID, "build_model", modelData);
   };
 
   return (
@@ -145,7 +133,7 @@ export const SimulationSettings = () => {
             <Select.Option value="Tsit5">Tsit5</Select.Option>
           </Select>
         </Form.Item>
-        <Button className="button" type="primary" disabled={!isSocketConnected} onClick={onSimulateButtonPressed}>Simulate</Button>
+        <Button className="button" type="primary" onClick={onSimulateButtonPressed}>Simulate</Button>
         <Link to="/results">
           <Button className="button" icon={<LineChartOutlined />} disabled={simulationStage !== SimulationStage.Done}>
             Results

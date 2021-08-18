@@ -1,21 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { send } from '../../sockets/sockets'
-import { useAppSelector, useAppDispatch } from '../../hooks'
+import { useAppSelector } from '../../hooks'
 import { selectModelNodes, selectEdgeNodes } from '../graph_editor/graphEditorSlice'
-import { v4 as uuidv4 } from 'uuid';
-import { 
-  FlowElement,
-} from 'react-flow-renderer/nocss';
 
 import { 
   Form, 
   Input, 
   Button, 
-  Select, 
   Steps, 
   Modal,
   Drawer,
-  Tree,
   Typography,
   Collapse,
   Table
@@ -47,7 +41,14 @@ enum EstimationStage {
   Optimizing,
   Done
 }
-export const ParameterEstimationSettings = () => {
+
+type ParameterEstimationSettingsProps = {
+  socket: WebSocket;
+  socketID: string;
+}
+
+
+export const ParameterEstimationSettings = ({ socket, socketID }: ParameterEstimationSettingsProps) => {
 
   interface StatesObject {
     [key: string]: any
@@ -64,15 +65,11 @@ export const ParameterEstimationSettings = () => {
   const [states, setStates] = useState<StatesObject>({});
   const [optimizedParameters, setOptimizedParameters] = useState<OptimizedParameter[]>([]);
   const [historyDrawerClosed, setHistoryDrawerClosed] = useState<boolean>(true);
-  const [isSocketConnected, setIsSocketConnected] = useState<boolean>(false);
   const [estimationStage, setEstimationStage] = useState<EstimationStage>(EstimationStage.Initializing);
 
-  const dispatch = useAppDispatch();
   const modelNodes = useAppSelector(state => selectModelNodes(state));
   const edgeNodes = useAppSelector(state => selectEdgeNodes(state));
-  const socket = useRef(new WebSocket("ws://127.0.0.1:8081"));
-  const socketID = useRef(uuidv4());
-  
+
   useEffect(() => {
 
     let tempStates: StatesObject = {}
@@ -84,14 +81,7 @@ export const ParameterEstimationSettings = () => {
 
     setStates(tempStates)
 
-    socket.current.onopen = () => {
-      console.log('Connected to websocket server');
-      send(socket.current, socketID.current, "connect");
-      setIsSocketConnected(true);
-    };
-
-
-    socket.current.onmessage = (message) => {
+    socket.onmessage = (message) => {
       console.log("Get message from server: ", message);
       if (message.data === "optimizing") {
         setEstimationStage(EstimationStage.Optimizing);
@@ -106,15 +96,7 @@ export const ParameterEstimationSettings = () => {
       }
     };
 
-    let s = socket.current;
-    let id = socketID.current
-    return () => {
-      console.log("closing websocket connection");
-      send(s, id, "disconnect");
-      s.close();
-    }
-
-  }, []);
+  }, [socket]);
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -149,7 +131,7 @@ export const ParameterEstimationSettings = () => {
     let modelData = {modelNodes: modelNodes, edgeNodes: edgeNodes, states: states};
     console.log("sending model to server");
     console.log(modelData)
-    send(socket.current, socketID.current, "estimate_parameters", modelData);
+    send(socket, socketID, "estimate_parameters", modelData);
   }
 
   return (
@@ -186,7 +168,7 @@ export const ParameterEstimationSettings = () => {
         layout="vertical"
         // wrapperCol={{ span: 4 }}
       >
-        <Button className="button" disabled={!isSocketConnected} type="primary" onClick={onEstimateButtonPressed}>Estimate</Button>
+        <Button className="button" type="primary" onClick={onEstimateButtonPressed}>Estimate</Button>
         <Button className="button"icon={<CalendarOutlined />} onClick={showHistoryDrawer}>Parameter Estimation History</Button>
       </Form>
 
